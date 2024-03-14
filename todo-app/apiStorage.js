@@ -1,14 +1,8 @@
+import { getItems } from "./api.js";
 import { createTodoItem } from "./view.js";
 
-export const getApiStorage = async () => {
-  const response = await fetch('http://192.168.0.104:5000/api/todos');
-  const result = await response.json();
-
-  return result;
-};
-
 export const appendApiItems = async (todoList) => {
-  const apiData = await getApiStorage();
+  const apiData = await getItems();
 
   if (apiData) {
     apiData.forEach(element => {

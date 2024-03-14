@@ -124,7 +124,7 @@ function updateTodoItem(itemId, data) {
  */
 function deleteTodoItem(itemId) {
   const todoItems = getTodoList();
-  const itemIndex = todoItems.findIndex(({ id }) => id === itemId);
+  const itemIndex = todoItems.findIndex(({ id }) => id == itemId);
   if (itemIndex === -1) throw new TodoApiError(404, { message: 'TODO Item Not Found' });
   todoItems.splice(itemIndex, 1);
   writeFileSync(DB_FILE, JSON.stringify(todoItems), { encoding: 'utf8' });

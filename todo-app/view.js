@@ -1,6 +1,5 @@
-import { toggleChecked } from './storageToggle.js'
-import { getApiStorage } from './apiStorage.js'
-import { createTodo } from './api.js';
+import { createItem, deleteItem } from "./api.js";
+import { toggleChecked } from "./storageToggle.js";
 
 const listName = "my";
 
@@ -50,7 +49,7 @@ export const createTodoList = () => {
   return list;
 };
 
-export const createTodoItem = (obj, localData) => {
+export const createTodoItem = (todoItem, localData) => {
   let item = document.createElement("li");
   let buttonGroup = document.createElement("div");
   let doneButton = document.createElement("button");
@@ -63,7 +62,7 @@ export const createTodoItem = (obj, localData) => {
     "align-items-center"
   );
 
-  item.textContent = obj.name;
+  item.textContent = todoItem.name;
 
   buttonGroup.classList.add("btn-group", "btn-group-sm");
   doneButton.classList.add("btn", "btn-success");
@@ -71,7 +70,7 @@ export const createTodoItem = (obj, localData) => {
   deleteButton.classList.add("btn", "btn-danger");
   deleteButton.textContent = "Удалить";
 
-  if (obj.done === true) {
+  if (todoItem.done === true) {
     item.classList.add("list-group-item-success");
   }
 
@@ -79,31 +78,25 @@ export const createTodoItem = (obj, localData) => {
     item.classList.toggle("list-group-item-success");
 
     for (const listItem of localData) {
-      if (listItem.id === obj.id) {
+      if (listItem.id === todoItem.id) {
         listItem.done = !listItem.done;
       }
     }
     localStorage.setItem(listName, JSON.stringify(localData));
   });
 
-
   deleteButton.addEventListener("click", async function () {
-    const apiData = await getApiStorage();
     const localData = JSON.parse(localStorage.getItem(listName));
-    let storage = toggleChecked ? apiData : localData;
-    storage = storage.filter((listItem) => listItem.id !== obj.id)
+    let storage = localData;
+    storage = storage.filter((listItem) => listItem.id !== todoItem.id);
 
     if (confirm("Вы уверены?")) {
       item.remove();
-
-
       if (toggleChecked) {
-        // createTodo(newItem);
+        deleteItem(todoItem.id);
       } else {
         localStorage.setItem(listName, JSON.stringify(storage));
       }
-
-
     }
   });
 
@@ -135,7 +128,7 @@ export const handleSubmit = (todoItemForm, todoList, localData) => {
     let todoItem = createTodoItem(newItem, localData);
 
     if (toggleChecked) {
-      createTodo(newItem);
+      createItem(newItem);
     } else {
       localData.push(newItem);
     }
