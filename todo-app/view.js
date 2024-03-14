@@ -1,4 +1,8 @@
-let listName = "my";
+import { toggleChecked } from './storageToggle.js'
+import { getApiStorage } from './apiStorage.js'
+import { createTodo } from './api.js';
+
+const listName = "my";
 
 export const createAppTitle = (title) => {
   let appTitle = document.createElement("h2");
@@ -12,7 +16,6 @@ export const createTodoItemForm = () => {
   let buttonWrapper = document.createElement("div");
   let button = document.createElement("button");
 
-  // Расставляем атрибуты для элементов
   form.classList.add("input-group", "mb-3");
   input.classList.add("form-control");
   input.placeholder = "Введите название нового дела";
@@ -22,7 +25,6 @@ export const createTodoItemForm = () => {
 
   button.disabled = true;
 
-  // Объединяем элементы
   buttonWrapper.append(button);
   form.append(input);
   form.append(buttonWrapper);
@@ -35,7 +37,6 @@ export const createTodoItemForm = () => {
     }
   });
 
-  // Возвращаем результат
   return {
     form,
     input,
@@ -49,26 +50,19 @@ export const createTodoList = () => {
   return list;
 };
 
-export const saveList = (arr, keyName) => {
-  console.log(arr, keyName)
-  localStorage.setItem(keyName, JSON.stringify(arr)); // Записываем в локалсторэдж массив в виде строки с данными списка
-};
-
-export const createTodoItem = (obj) => {
-  // Кнопки помещаем в элемент, который красиво покажет их в одной группе
+export const createTodoItem = (obj, localData) => {
   let item = document.createElement("li");
   let buttonGroup = document.createElement("div");
   let doneButton = document.createElement("button");
   let deleteButton = document.createElement("button");
 
-  // Устанавливаем стили для элемента списка
   item.classList.add(
     "list-group-item",
     "d-flex",
     "justify-content-between",
     "align-items-center"
   );
-  
+
   item.textContent = obj.name;
 
   buttonGroup.classList.add("btn-group", "btn-group-sm");
@@ -84,34 +78,39 @@ export const createTodoItem = (obj) => {
   doneButton.addEventListener("click", function () {
     item.classList.toggle("list-group-item-success");
 
-    // const currentName = item.firstChild.textContent; // Получаем текст без кнопок (текст первого элемента) Если использовать поиск по id, то эта переменная не нужна
-
-    // Добавляем возможность изменения статуса done в массиве (до этого изменения происходили только в DOM) ----------------------------------------------- Этап 4 -----------------
-    for (const listItem of JSON.parse(localStorage.getItem(listName))) {
+    for (const listItem of localData) {
       if (listItem.id === obj.id) {
         listItem.done = !listItem.done;
       }
     }
-    saveList(JSON.parse(localStorage.getItem(listName)), listName); // Сохранение при изменении статуса дела ------------------------------------------------------------------------------------- Этап 5 -------------
+    localStorage.setItem(listName, JSON.stringify(localData));
   });
 
-  deleteButton.addEventListener("click", function () {
+
+  deleteButton.addEventListener("click", async function () {
+    const apiData = await getApiStorage();
+    const localData = JSON.parse(localStorage.getItem(listName));
+    let storage = toggleChecked ? apiData : localData;
+    storage = storage.filter((listItem) => listItem.id !== obj.id)
+
     if (confirm("Вы уверены?")) {
       item.remove();
-      console.log((localStorage.getItem(listName)))
 
-    
-    //     if (JSON.parse(localStorage.getItem(listName)).id === obj.id) {
-    //     // localStorage.setItem(listName, {});
-    // }
-  }});
 
-  // Вкладываем кнопки в отдельный элемент, чтобы они объединились в один блок
+      if (toggleChecked) {
+        // createTodo(newItem);
+      } else {
+        localStorage.setItem(listName, JSON.stringify(storage));
+      }
+
+
+    }
+  });
+
   buttonGroup.append(doneButton);
   buttonGroup.append(deleteButton);
   item.append(buttonGroup);
 
-  // Возвращаем объект
   return {
     item,
     doneButton,
@@ -119,27 +118,31 @@ export const createTodoItem = (obj) => {
   };
 };
 
-export const handleSubmit = (todoItemForm, todoList) => {
+export const handleSubmit = (todoItemForm, todoList, localData) => {
   todoItemForm.form.addEventListener("submit", function (e) {
     e.preventDefault();
 
     if (!todoItemForm.input.value) {
-      // value - забирает данные, введенные в поле
       return;
     }
 
     let newItem = {
-      // Создаём переменную, которая будет хранить в себе уникальный id, объект с делом и статусом выполнения ----------------------------------------------------- Этап 3 --------
       id: Math.round(Math.random() * 1000),
       name: todoItemForm.input.value,
       done: false,
     };
 
-    let todoItem = createTodoItem(newItem); // Помещаем в переменную результат выполнения функции; вместо todoItemForm.input.value используем newItem, т.к. перед этим создали переменную ---------Этап 3 --------
+    let todoItem = createTodoItem(newItem, localData);
 
-    localStorage.setItem(listName, JSON.stringify( newItem));
-    todoList.append(todoItem.item); // с обработчиком кнопок
-    todoItemForm.button.disabled = true; // Возвращаем значение для кнопки не активно после отправки значений ---------------------------------------------------- Этап 2 -----------
+    if (toggleChecked) {
+      createTodo(newItem);
+    } else {
+      localData.push(newItem);
+    }
+
+    localStorage.setItem(listName, JSON.stringify(localData));
+    todoList.append(todoItem.item);
+    todoItemForm.button.disabled = true;
     todoItemForm.input.value = "";
   });
 };
